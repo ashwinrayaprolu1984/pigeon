@@ -1,0 +1,127 @@
+{
+	"namespace": "transactionlog",
+	"type": "record",
+	"name": "Record",
+	"fields": 
+	[
+		{
+			"name": "database",
+			"type": "string"
+		},
+
+		{
+			"name": "table",
+			"type": "string"
+		},
+
+		{
+			"name": "rdbmsType",
+			"type": 
+			[
+				"string",
+				"null"
+			]
+		},
+
+		{
+			"name": "eventType",
+			"type": 
+			{
+				"type": "enum",
+				"name": "EventTypeTransactionLog",
+				"symbols": 
+				[
+					"WRITE_ROWS",
+					"DELETE_ROWS",
+					"UPDATE_ROWS"
+				]
+			}
+		},
+
+		{
+			"name": "totalCountTransactionEvent",
+			"type": "int"
+		},
+
+		{
+			"name": "currentEventIndex",
+			"type": "int"
+		},
+
+		{
+			"name": "lastPositionNumber",
+			"type": 
+			[
+				"long",
+				"null"
+			]
+		},
+
+		{
+			"name": "logFileName",
+			"type": 
+			[
+				"string",
+				"null"
+			]
+		},
+
+		{
+			"name": "transactionSequenceNumber",
+			"type": 
+			[
+				"long",
+				"null"
+			]
+		},
+
+		{
+			"name": "timestampOperation",
+			"type": "long"
+		},
+
+		{
+			"name": "transactionId",
+			"type": "string"
+		},
+
+		{
+			"name": "afterValue",
+			"type": 
+			{
+				"type": "array",
+				"items": 
+				[
+					"string",
+					"null"
+				]
+			}
+		},
+
+		{
+			"name": "beforeValue",
+			"type": 
+			{
+				"type": "array",
+				"items": 
+				[
+					"string",
+					"null"
+				]
+			}
+		},
+
+		{
+			"name": "columnName",
+			"type": 
+			{
+				"type": "array",
+				"items": 
+				[
+					"string",
+					"null"
+				]
+			}
+		}
+	]
+}
