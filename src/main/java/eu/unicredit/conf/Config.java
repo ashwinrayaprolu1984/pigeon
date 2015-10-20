@@ -8,9 +8,14 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Config {
 
 
+	private static Logger LOG = LoggerFactory.getLogger(Config.class);
+	
 	private static Config conf = new Config();
 	private Properties propsCommon= new Properties();
 	private Properties propsConsumer= new Properties();
@@ -99,19 +104,12 @@ public class Config {
 						);
 		propsPigeon.putAll(tmpMap);
 
-		tmp.forEach((x,y)->System.out.println(x + "=" + y));
+		tmp.forEach((x,y)->LOG.debug(x + "=" + y));
 		tmp=null;
 
 	}
 	
 	
-	public static void main(String[] args) {
-		//		new Config();
-		
-		String x="producer.serializer.class";
-		System.out.println(x.substring(x.indexOf(".")+1));
-	}
-
 	public enum CONTEXT{
 		COMMON("common"),
 		PIGEON("pigeon"),

@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import eu.unicredit.conf.Config;
 import eu.unicredit.exception.CheckTopicFailureException;
 import eu.unicredit.exception.NoMessageToParseException;
@@ -24,6 +27,7 @@ public class KafkaDelegate {
 
 
 	private Properties propsConsumer = Config.getInstance().getProperties(Config.CONTEXT.CONSUMER);
+	private static Logger LOG = LoggerFactory.getLogger(KafkaDelegate.class);
 
 	public boolean checkTopicIsEmpty(String zookeeperConnect,String topic,int partition) throws CheckTopicFailureException{
 
@@ -32,10 +36,12 @@ public class KafkaDelegate {
 			PartitionMetadata pm= ku.findLeader(zookeeperConnect, topic, partition);
 			long logSize=ku.getLogSize(pm.leader().host(),pm.leader().port(), topic, 0);
 
-			System.out.println("Topic Size " + logSize);
+			LOG.debug("Topic Size " + logSize);
 			if(logSize==0)return true;
 
-			byte[] bb = ku.readAtOffSet(pm.leader().host(),pm.leader().port(),topic, 1, 0);
+			
+			//to be sure there are not previous messages
+			byte[] bb = ku.readAtOffSet(pm.leader().host(),pm.leader().port(),topic, logSize-1, 0);
 			if(bb==null)return true;
 		}catch(Exception e){
 			throw new CheckTopicFailureException(e);
@@ -50,7 +56,7 @@ public class KafkaDelegate {
 		
 		Producer<Integer , String> producer = new kafka.javaapi.producer.Producer<Integer, String>(new ProducerConfig(Config.getInstance().getProperties(Config.CONTEXT.PRODUCER)));
 		
-		Config.getInstance().getProperties(Config.CONTEXT.PRODUCER).forEach((x,y)-> System.out.println(x+"="+y));
+		Config.getInstance().getProperties(Config.CONTEXT.PRODUCER).forEach((x,y)-> LOG.debug(x+"="+y));
 		producer.send(new KeyedMessage<Integer, String>(topic, message));
 		producer.close();
 		
@@ -69,6 +75,7 @@ public class KafkaDelegate {
 			@Override
 			public synchronized void start() {
 				super.start();
+				LOG.info("Pigeon Shutdown - Closing kafka consumer");
 				consumer.shutdown();
 			}
 
@@ -85,9 +92,12 @@ public class KafkaDelegate {
 		PartitionMetadata pm =  ku.findLeader(zookeeperConnect, topic, partition);
 		long logSize=ku.getLogSize(pm.leader().host(), pm.leader().port(), topic, partition);
 
-		System.out.println("Topic szie [" + logSize+ "]");
+		LOG.debug("Topic size [" + logSize+ "]");
 		if(logSize==0)return null;
+		long start = System.currentTimeMillis();
+		LOG.debug("Read last message start time(ms) "+ start);
 		byte[] bb = ku.readAtOffSet(pm.leader().host(), pm.leader().port(), topic, logSize-1, 0);
+		LOG.debug("End read last message  time(ms) "+ (System.currentTimeMillis()-start));
 
 		return bb;
 

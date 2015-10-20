@@ -1,5 +1,10 @@
 package eu.unicredit.replicator;
 
+import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
 import com.github.shyiko.mysql.binlog.event.EventType;
 import com.github.shyiko.mysql.binlog.event.deserialization.EventDeserializer;
@@ -20,7 +25,7 @@ import transactionlog.Record;
 
 public class ReplicatorManager {
 
-
+	private static Logger LOG = LoggerFactory.getLogger(ReplicatorManager.class);
 
 
 	public void start() throws Throwable {
@@ -42,7 +47,20 @@ public class ReplicatorManager {
 		TrackerLog.getInstance().setLogFileName(client.getBinlogFilename());
 		TrackerLog.getInstance().setRdbmsType("MariaDB");
 		client.connect();
-		System.out.println("Connected!");		
+		Runtime.getRuntime().addShutdownHook(new Thread(){
+
+			@Override
+			public synchronized void start() {
+				try {
+					LOG.info("Pigeon Shutdown - Disconnect TransactionLog Reader");
+					client.disconnect();
+				} catch (IOException e) {
+					LOG.error("Error closin channel to db",e);
+				}
+			}
+			
+		});
+		LOG.info("Connected!");		
 	}
 
 	private void initClientMariaDB(BinaryLogClient client){
@@ -76,16 +94,19 @@ public class ReplicatorManager {
 		ConsumerIterator it = stream.iterator();
 
 		try {
-			System.out.println("Waiting to lead............................");
+			LOG.info("Waiting to lead............................");
 			it.isEmpty();
+			LOG.info("Check topic is empty");
 			boolean isEmpty =kafkaDelegate.checkTopicIsEmpty(Config.getInstance().getProperties(Config.CONTEXT.CONSUMER,Config.KEY.ZOOKEPER_URL), topic, 0);
 			if(!isEmpty){
-				System.out.println("Try to restore from latest transaction sequence number........");
+				LOG.info("Tring to restore from latest transaction sequence number........");
 				Record r = kafkaDelegate.readAndParseLastMessage(Config.getInstance().getProperties(Config.CONTEXT.CONSUMER,Config.KEY.ZOOKEPER_URL), topic, 0);
 				client.setBinlogPosition(r.getLastPositionNumber());
 				client.setBinlogFilename(r.getLogFileName().toString());
+			}else{
+				LOG.info("Topic empty!!!");
 			}
-			System.out.println("Lead election!!!!");
+			LOG.info("Lead election!!!!");
 		} catch ( NoMessageToParseException e) {
 			throw new RuntimeException(e);
 		}

@@ -3,6 +3,9 @@ package eu.unicredit.reader.event;
 import java.io.Serializable;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.shyiko.mysql.binlog.BinaryLogClient.EventListener;
 import com.github.shyiko.mysql.binlog.event.Event;
 import com.github.shyiko.mysql.binlog.event.EventHeaderV4;
@@ -16,7 +19,8 @@ import eu.unicredit.util.Utils;
 
 public class WriteEventListener extends AbstractReplicatorListener {
 
- 
+	private static Logger LOG = LoggerFactory.getLogger(WriteEventListener.class);
+
 	@Override
 	public void onEvent(Event event) {
 
@@ -26,18 +30,17 @@ public class WriteEventListener extends AbstractReplicatorListener {
 		WriteRowsEventData w = (WriteRowsEventData)event.getData();
 		EventHeaderV4 header= (EventHeaderV4)event.getHeader();
 
-		
-		
+
+
 		List<Serializable[]> lst= w.getRows();
 		for (Serializable[]  ss : lst) {
 			ReplicaSchema schema = trackerLog.getCurrentSchema();
 			schema.setEventType(event.getHeader().getEventType().name());
 			for (Serializable s : ss) {
 				Object bb= Utils.deserialize(s);
-				
 				schema.addAfter((bb!=null?bb.toString():null));
 				schema.getHeader().setTimestamp(header.getTimestamp());
-				
+
 				//				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				//				ObjectOutputStream oos;
 				//				try {
@@ -48,10 +51,10 @@ public class WriteEventListener extends AbstractReplicatorListener {
 				//					InputStream is = new ByteArrayInputStream(baos.toByteArray());
 				//					ObjectInputStream ois=new ObjectInputStream(is);
 				//					byte[] bb = (byte[])ois.readObject();
-				//					
-				System.out.println(bb);
+				//		
+				LOG.debug((bb!=null?bb.toString():null));
 
-				
+
 			}
 			trackerLog.push();
 		}

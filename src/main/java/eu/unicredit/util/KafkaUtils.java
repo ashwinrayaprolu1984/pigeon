@@ -14,9 +14,12 @@ import org.I0Itec.zkclient.exception.ZkMarshallingError;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import kafka.api.FetchRequestBuilder;
 import kafka.api.PartitionFetchInfo;
 import kafka.api.PartitionOffsetRequestInfo;
 import kafka.common.TopicAndPartition;
@@ -35,13 +38,17 @@ import kafka.network.Receive;
 
 public class KafkaUtils {
 
+	private static Logger LOG = LoggerFactory.getLogger(KafkaUtils.class); 
+
+
 	public static void main(String[] args) {
-		
+
 		KafkaUtils ku = new KafkaUtils();
 		PartitionMetadata pm = ku.findLeader("10.124.56.154:2181", "redolog2", 0);
 		long offset = ku.getLogSize(pm.leader().host(),pm.leader().port(),"redolog2",0);
-		ku.readAtOffSet(pm.leader().host(),pm.leader().port(),"redolog2",offset-1,0);
-		
+		byte[] bb = ku.readAtOffSet(pm.leader().host(),pm.leader().port(),"redolog2",100,0);
+		System.out.println(new String(bb));
+
 	}
 
 
@@ -124,7 +131,7 @@ public class KafkaUtils {
 		b.getInt();
 		byte[] bb=new byte[b.remaining()];
 		b.get(bb);
-		System.out.println(new String(bb));
+		LOG.debug(new String(bb));
 
 	}
 
@@ -139,7 +146,7 @@ public class KafkaUtils {
 			try {
 				brokerInfo = new String(zk.getData("/brokers/ids/" + t, false, null));
 				Map<Object,Object> mappa= mapper.readValue(brokerInfo.getBytes(), Map.class);
-				System.out.println(mappa.get("host")+":"+mappa.get("port"));
+				LOG.debug(mappa.get("host")+":"+mappa.get("port"));
 				broker.add(mappa.get("host")+":"+mappa.get("port"));
 			} catch (KeeperException | InterruptedException | IOException e) {
 				e.printStackTrace();
@@ -247,7 +254,7 @@ public class KafkaUtils {
 					}
 				}
 			} catch (Exception e) {
-				System.out.println("Error communicating with Broker [" + broker + "] to find Leader for [" + topic
+				LOG.error("Error communicating with Broker [" + broker + "] to find Leader for [" + topic
 						+ ", " + partition + "] Reason: " + e);
 			} finally {
 				if (consumer != null) consumer.close();
@@ -314,13 +321,14 @@ public class KafkaUtils {
 			long[] offsets = response.offsets(topic, partition);
 
 			if (response.hasError()) {
-				System.out.println("Error fetching data Offset Data the Broker. Reason: " + response.errorCode(topic, partition) );
+				LOG.error("Error fetching data Offset Data the Broker. Reason: " + response.errorCode(topic, partition) );
 				System.exit(1);
 			}
 
 			return offsets[0];
 		}finally{
-			sc.close();
+			if(sc!=null)
+				sc.close();
 		}
 	}
 
@@ -330,32 +338,39 @@ public class KafkaUtils {
 	public byte[] readAtOffSet(String leaderHost,int leaderPort,String topic,long offset,int partition){
 
 
-		SimpleConsumer sc = new SimpleConsumer(leaderHost, leaderPort, 500, 4096, "readAtOffSet");
-		TopicAndPartition tp = new TopicAndPartition(topic, 0);
-		//		PartitionFetchInfo pf = new PartitionFetchInfo(0, 1000);
+		SimpleConsumer sc = new SimpleConsumer(leaderHost, leaderPort, 1000, 4096, "readAtOffSet");
+		try{
+			TopicAndPartition tp = new TopicAndPartition(topic, 0);
+			//		PartitionFetchInfo pf = new PartitionFetchInfo(0, 1000);
 
-		Map<TopicAndPartition, PartitionFetchInfo> m=new HashMap<>();
-		PartitionFetchInfo pf = new PartitionFetchInfo(offset, 16777216);
-		m.put(tp, pf);
+			Map<TopicAndPartition, PartitionFetchInfo> m=new HashMap<>();
+			PartitionFetchInfo pf = new PartitionFetchInfo(offset, 16777216);
+			m.put(tp, pf);
 
-		FetchRequest rf = new FetchRequest(0, "readAtOffSet", 100,1, m);
-		FetchResponse fetchResponse =sc.fetch(rf);
-
-
-
-		ByteBufferMessageSet bms= fetchResponse.messageSet(topic, 0);
-		for (MessageAndOffset messageAndOffset : bms) {
-			ByteBuffer bf = messageAndOffset.message().payload();
-			bf.get();
-			bf.getInt();
 			
-			int pos = bf.position();
-			int len = bf.limit() - pos;
-			byte[] b = new byte[len];
-			bf.get(b, 0, len);
+			FetchRequest rf = new FetchRequest(0, "readAtOffSet", 500,1, m);
+//			FetchRequest rf  =new FetchRequestBuilder().build();
+			FetchResponse fetchResponse =sc.fetch(rf.underlying());
 
 
-			return b;
+
+			ByteBufferMessageSet bms= fetchResponse.messageSet(topic, 0);
+			for (MessageAndOffset messageAndOffset : bms) {
+				ByteBuffer bf = messageAndOffset.message().payload();
+				bf.get();
+				bf.getInt();
+
+				int pos = bf.position();
+				int len = bf.limit() - pos;
+				byte[] b = new byte[len];
+				bf.get(b, 0, len);
+
+
+				return b;
+			}
+		}finally{
+			if(sc!=null)
+				sc.close();
 		}
 		return null;
 
