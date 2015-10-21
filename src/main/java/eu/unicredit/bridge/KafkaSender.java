@@ -44,7 +44,6 @@ public class KafkaSender {
 			LOG.debug("After " + schema.getAfter().size());
 			LOG.debug("Before " + schema.getBefore().size());
 
-			producer.setSchema(e.getSchema());
 			producer.send(e);
 		}catch(Exception e){
 			LOG.debug("Count.........." + trackerLog.item.get());

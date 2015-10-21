@@ -62,10 +62,10 @@ public class KafkaDelegate {
 		
 	}
 	
-	public KafkaStream createMessageStream(String topic) throws Exception{
+	public KafkaStream<byte[],byte[]> createMessageStream(String topic) throws Exception{
 		
 		Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
-		topicCountMap.put(topic, new Integer(1));
+		topicCountMap.put(topic, 1);
 
 		final ConsumerConnector consumer = kafka.consumer.Consumer.createJavaConsumerConnector(new ConsumerConfig(propsConsumer));
 
@@ -75,7 +75,7 @@ public class KafkaDelegate {
 			@Override
 			public synchronized void start() {
 				super.start();
-				LOG.info("Pigeon Shutdown - Closing kafka consumer");
+				LOG.info("Pigeon Shutdown - Closing kafka consumer on topic ["+ topic + "]");
 				consumer.shutdown();
 			}
 

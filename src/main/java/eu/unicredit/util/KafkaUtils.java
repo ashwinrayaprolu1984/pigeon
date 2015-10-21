@@ -46,7 +46,7 @@ public class KafkaUtils {
 		KafkaUtils ku = new KafkaUtils();
 		PartitionMetadata pm = ku.findLeader("10.124.56.154:2181", "redolog2", 0);
 		long offset = ku.getLogSize(pm.leader().host(),pm.leader().port(),"redolog2",0);
-		byte[] bb = ku.readAtOffSet(pm.leader().host(),pm.leader().port(),"redolog2",100,0);
+		byte[] bb = ku.readAtOffSet(pm.leader().host(),pm.leader().port(),"redolog2",1,0);
 		System.out.println(new String(bb));
 
 	}

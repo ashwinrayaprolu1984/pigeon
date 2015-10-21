@@ -39,7 +39,7 @@ public class ReplicatorManager {
 		this.initClientMariaDB(client);
 		this.initConcurrencyManagement(client);
 		this.connect(client);
-
+		
 
 	}
 
@@ -55,7 +55,7 @@ public class ReplicatorManager {
 					LOG.info("Pigeon Shutdown - Disconnect TransactionLog Reader");
 					client.disconnect();
 				} catch (IOException e) {
-					LOG.error("Error closin channel to db",e);
+					LOG.error("Error closing BinaryLogClient",e);
 				}
 			}
 			
@@ -88,14 +88,14 @@ public class ReplicatorManager {
 
 		KafkaDelegate kafkaDelegate= new KafkaDelegate();
 		kafkaDelegate.send(electionQueue, Thread.currentThread().getName());
-
+		
 
 		KafkaStream stream = kafkaDelegate.createMessageStream(electionQueue);
 		ConsumerIterator it = stream.iterator();
 
 		try {
 			LOG.info("Waiting to lead............................");
-			it.isEmpty();
+			it.hasNext();
 			LOG.info("Check topic is empty");
 			boolean isEmpty =kafkaDelegate.checkTopicIsEmpty(Config.getInstance().getProperties(Config.CONTEXT.CONSUMER,Config.KEY.ZOOKEPER_URL), topic, 0);
 			if(!isEmpty){

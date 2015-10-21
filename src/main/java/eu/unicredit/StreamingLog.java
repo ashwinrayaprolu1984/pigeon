@@ -22,11 +22,8 @@ public class StreamingLog {
 		ReplicatorManager rm = new ReplicatorManager();
 		try {
 			rm.start();
-
-
 		} catch (Throwable e) {
 			LOG.error("UnknownError",e);
-
 			System.exit(1);
 		}
 	}
