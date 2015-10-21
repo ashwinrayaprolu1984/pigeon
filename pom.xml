@@ -18,7 +18,6 @@
 		</repository>
 		<repository>
 			<id>central repo</id>
-			<!-- force https protocol to avoid corporate proxy errors -->
 			<url>https://repo.maven.apache.org/maven2/</url>
 		</repository>
 	</repositories>
@@ -64,7 +63,6 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<!-- sourceDirectory>src</sourceDirectory -->
 		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
