@@ -33,12 +33,21 @@ Quick Start
 	1. db.properties
 	2. pigeon.properties
 
+Setting the keys:
+
+> `common.schema.registry.url` 
+
+> `pigeon.kafka.topic`
+
 
 Run main class `eu.unicredit.StreamingLog`
 
 
 
+Optional
+--------
 
+add -Dlog4j.configuration=file:/<your log4j.properties> -Dlog4j.debug
 
 
 
